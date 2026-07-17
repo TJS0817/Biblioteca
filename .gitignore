@@ -1,0 +1,12 @@
+config.local.js
+config.local.json
+__pycache__/
+*.pyc
+
+# Generated locally by rescan.py -- contains absolute local file paths
+# (usernames, directory layout). Regenerate with: python rescan.py
+data/skills-index.json
+data/session-health.json
+
+# Local machine-specific permission grants (may embed local folder paths).
+.claude/settings.local.json
