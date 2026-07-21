@@ -70,7 +70,46 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
   letter-spacing:0.5px;color:var(--dim);cursor:pointer
 }
 #source-filter input[type=checkbox]{accent-color:var(--acc);width:11px;height:11px;cursor:pointer;margin:0}
-#graph-canvas{width:100%;height:100%}
+/* Deep-space backdrop — a dark, subtly-lit gradient the stars sit against.
+   force-graph's own canvas is transparent so this shows through. */
+#graph-canvas{
+  width:100%;height:100%;position:absolute;inset:0;
+  background:
+    radial-gradient(120% 90% at 30% 20%, rgba(139,124,248,0.10), transparent 55%),
+    radial-gradient(90% 80% at 78% 82%, rgba(75,201,226,0.06), transparent 55%),
+    radial-gradient(140% 120% at 50% 50%, #14102a 0%, #0b0916 60%, #060510 100%)
+}
+
+/* ── STAR LEGEND ── */
+#graph-legend{
+  position:absolute;left:12px;bottom:12px;z-index:5;display:flex;flex-wrap:wrap;gap:5px 10px;
+  background:rgba(10,8,20,0.55);border:1px solid var(--bd);padding:6px 9px;backdrop-filter:blur(2px)
+}
+.lg{
+  display:flex;align-items:center;font:500 8px/1 'JetBrains Mono',monospace;letter-spacing:1px;color:var(--dim)
+}
+.lg::before{
+  content:'';width:7px;height:7px;border-radius:50%;margin-right:5px;
+  background:currentColor;box-shadow:0 0 5px 1px currentColor
+}
+.lg-skill{color:#8b7cf8}.lg-agent{color:#4BC9E2}.lg-command{color:#1D9E75}
+.lg-plugin{color:#E29A4B}.lg-mcp{color:#E24B9E}
+
+/* ── STAR TOOLTIP (force-graph .float-tooltip-kap host) ── */
+.float-tooltip-kap{
+  background:rgba(10,8,20,0.92)!important;border:1px solid var(--bd2);padding:0!important;
+  font-family:'JetBrains Mono',monospace!important;box-shadow:0 6px 22px rgba(0,0,0,0.55);max-width:280px
+}
+.star-tip{padding:8px 10px}
+.st-name{font:600 11px/1.2 'JetBrains Mono',monospace;letter-spacing:0.5px;margin-bottom:5px}
+.st-tags{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px}
+.st-tags span{
+  font:500 7.5px/1 'JetBrains Mono',monospace;letter-spacing:0.5px;color:var(--dim);
+  background:rgba(139,124,248,0.1);border:1px solid var(--bd);padding:3px 5px
+}
+.st-desc{font:400 9.5px/1.5 'JetBrains Mono',monospace;color:var(--txt);letter-spacing:0.2px}
+.st-kw{margin-top:6px;font:400 8.5px/1.4 'JetBrains Mono',monospace;color:var(--faint);letter-spacing:0.3px}
+
 #graph-empty{
   position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
   font:500 10px/1.6 'JetBrains Mono',monospace;letter-spacing:1.5px;color:var(--faint);text-align:center;padding:0 30px
