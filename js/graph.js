@@ -21,10 +21,19 @@
   };
   const SOURCE_LABEL = { skill: 'SKILL', agent: 'AGENT', command: 'CMD', plugin: 'PLUGIN', 'mcp-tool': 'MCP' };
   const SOURCE_ORDER = ['skill', 'agent', 'command', 'plugin', 'mcp-tool'];
+
+  // ── Origin (which CLI a star belongs to) is an independent visual axis from
+  // source-type: type picks the star's fill/glow colour, origin picks a thin
+  // outer ring colour drawn on top — so both are legible at a glance.
+  const ORIGIN_COLOR = { 'claude-code': '#B7A9FF', codex: '#33E6B8' };
+  const ORIGIN_LABEL = { 'claude-code': 'CLAUDE CODE', codex: 'CODEX' };
+  const ORIGIN_ORDER = ['claude-code', 'codex'];
+
   const MAX_EDGES_PER_NODE = 5;
   const REC_STORAGE_KEY = 'biblioteca:recCounts';
 
   function sourceColor(src) { return SOURCE_COLOR[src] || '#8b7cf8'; }
+  function originColor(o) { return ORIGIN_COLOR[o] || ORIGIN_COLOR['claude-code']; }
 
   // A stable per-category hue so constellation regions (and their linking
   // lines) read as faint colour zones behind the type-coloured stars.
@@ -43,7 +52,7 @@
   const t0 = performance.now();
   const nowSec = () => (performance.now() - t0) / 1000;
 
-  const filterState = { text: '', sources: new Set(SOURCE_ORDER), plugin: '' };
+  const filterState = { text: '', sources: new Set(SOURCE_ORDER), origins: new Set(ORIGIN_ORDER), plugin: '' };
 
   // ── Persisted recommendation tally — recommended tools brighten over time.
   function loadRecCounts() {
@@ -86,6 +95,7 @@
         id: e.id,
         entry: e,
         __src: e.source,
+        __origin: e.origin,
         __cat: e.category || 'uncategorized',
         __hue: hashHue(e.category || 'uncategorized'),
         __mag: mag,
@@ -139,6 +149,7 @@
   function isHidden(n) {
     const e = n.entry;
     if (!filterState.sources.has(e.source)) return true;
+    if (!filterState.origins.has(e.origin)) return true;
     if (filterState.plugin && (e.plugin || '') !== filterState.plugin) return true;
     const q = filterState.text.trim().toLowerCase();
     if (!q) return false;
@@ -236,6 +247,16 @@
     ctx.arc(node.x, node.y, core * 0.42, 0, Math.PI * 2);
     ctx.fill();
 
+    // Origin ring — a thin outline in a colour distinct from every source-type
+    // fill colour, so which CLI a star belongs to reads at a glance without
+    // fighting the type colour for the same pixels.
+    const ringR = core * 1.7;
+    ctx.beginPath();
+    ctx.strokeStyle = hexA(originColor(node.__origin), Math.min(0.95, (isHover || node.__shine ? 0.8 : 0.55) * bright));
+    ctx.lineWidth = Math.max(0.6, core * 0.22);
+    ctx.arc(node.x, node.y, ringR, 0, Math.PI * 2);
+    ctx.stroke();
+
     // Labels only where they won't clutter: hovered/recommended always, and
     // brighter stars once zoomed in.
     const showLabel = isHover || node.__shine || (globalScale > 2.4 && node.__mag > 0.45);
@@ -270,7 +291,7 @@
     const kw = (e.keywords || []).slice(0, 6).join(' · ');
     return `<div class="star-tip">
       <div class="st-name" style="color:${sourceColor(e.source)}">${escapeHtml(e.name)}</div>
-      <div class="st-tags"><span>${SOURCE_LABEL[e.source] || e.source}</span><span>${escapeHtml(e.category || 'uncategorized')}</span>${e.plugin ? `<span>${escapeHtml(e.plugin)}</span>` : ''}</div>
+      <div class="st-tags"><span>${SOURCE_LABEL[e.source] || e.source}</span><span class="st-origin" style="color:${originColor(e.origin)}">${ORIGIN_LABEL[e.origin] || e.origin}</span><span>${escapeHtml(e.category || 'uncategorized')}</span>${e.plugin ? `<span>${escapeHtml(e.plugin)}</span>` : ''}</div>
       <div class="st-desc">${escapeHtml((e.description || '').slice(0, 200))}</div>
       ${kw ? `<div class="st-kw">${escapeHtml(kw)}</div>` : ''}
     </div>`;
@@ -336,8 +357,11 @@
     const counts = {};
     for (const e of index) counts[e.source] = (counts[e.source] || 0) + 1;
     const parts = SOURCE_ORDER.filter((k) => counts[k]).map((k) => `${counts[k]} ${SOURCE_LABEL[k]}`);
+    const originCounts = {};
+    for (const e of index) originCounts[e.origin] = (originCounts[e.origin] || 0) + 1;
+    const originParts = ORIGIN_ORDER.filter((o) => originCounts[o]).map((o) => `${originCounts[o]} ${ORIGIN_LABEL[o]}`);
     const shownSuffix = visibleCount !== index.length ? ` · ${visibleCount} SHOWN` : '';
-    return parts.join(' · ') + shownSuffix;
+    return parts.join(' · ') + ' · ' + originParts.join(' · ') + shownSuffix;
   }
 
   function applyFilters() {
@@ -353,11 +377,24 @@
   function populatePluginFilter(index) {
     const sel = document.getElementById('plugin-filter');
     if (!sel) return;
-    const plugins = Array.from(new Set(index.map((e) => e.plugin).filter(Boolean))).sort();
-    for (const p of plugins) {
-      const opt = document.createElement('option');
-      opt.value = p; opt.textContent = p.toUpperCase();
-      sel.appendChild(opt);
+    // Grouped by origin so a "github" plugin from Claude Code and a
+    // same-named one from Codex don't read as a single merged entry.
+    const byOrigin = {};
+    for (const e of index) {
+      if (!e.plugin) continue;
+      (byOrigin[e.origin] = byOrigin[e.origin] || new Set()).add(e.plugin);
+    }
+    for (const origin of ORIGIN_ORDER) {
+      const plugins = Array.from(byOrigin[origin] || []).sort();
+      if (!plugins.length) continue;
+      const group = document.createElement('optgroup');
+      group.label = ORIGIN_LABEL[origin] || origin;
+      for (const p of plugins) {
+        const opt = document.createElement('option');
+        opt.value = p; opt.textContent = p.toUpperCase();
+        group.appendChild(opt);
+      }
+      sel.appendChild(group);
     }
   }
 
@@ -370,6 +407,13 @@
       cb.addEventListener('change', () => {
         if (cb.checked) filterState.sources.add(cb.dataset.source);
         else filterState.sources.delete(cb.dataset.source);
+        applyFilters();
+      });
+    });
+    document.querySelectorAll('#origin-filter input[type=checkbox]').forEach((cb) => {
+      cb.addEventListener('change', () => {
+        if (cb.checked) filterState.origins.add(cb.dataset.origin);
+        else filterState.origins.delete(cb.dataset.origin);
         applyFilters();
       });
     });

@@ -1,15 +1,15 @@
 # Biblioteca
 
-**Biblioteca** ("library," in the knowledge-collection sense) is a local, no-build dashboard for your [Claude Code](https://claude.com/claude-code) skills/tools library. It visualizes every skill, agent, command, plugin, and MCP tool server installed on your machine as an interactive node graph, recommends the best match for a task via the Groq API, and surfaces session/config health at a glance.
+**Biblioteca** ("library," in the knowledge-collection sense) is a local, no-build dashboard for your [Claude Code](https://claude.com/claude-code) **and** [Codex](https://openai.com/codex/) skills/tools library. It visualizes every skill, agent, command, plugin, and MCP tool server installed on your machine — from either CLI — as a single interactive node graph, recommends the best match for a task across both tools via the Groq API, and surfaces session/config health at a glance.
 
 ![status](https://img.shields.io/badge/build-none%20required-8b7cf8) ![stack](https://img.shields.io/badge/stack-HTML%2FCSS%2FJS%20%2B%20Python-8b7cf8)
 
 ## Features
 
-- **Skills Graph** — an interactive [vis-network](https://visjs.github.io/vis-network/) graph of everything Claude Code has loaded: personal skills, plugin-provided skills, agents, slash commands, plugins themselves, and MCP tool servers. Nodes are shaped by type (star/triangle/square/dot/diamond) and colored by category; edges connect entries that share a category, overlapping keywords, or the same owning plugin.
-- **Filtering** — free-text search plus checkboxes for source type (skill/agent/command/plugin/mcp-tool) and a dropdown to isolate a single plugin's cluster.
-- **Task Recommender** — describe a task in plain language; a lightweight client-side shortlist step narrows hundreds of candidates down to the most relevant ~25, then the [Groq API](https://console.groq.com) (`llama-3.1-8b-instant`, free tier) picks the single best match and explains why. The matched node is highlighted and focused on the graph.
-- **Session Health** — a diagnostic snapshot of configured hooks, installed/enabled plugins, and known background-worker plugins (e.g. `claude-mem`) with their actual documented repair commands — informational only, not a live process monitor.
+- **Skills Graph** — an interactive [force-graph](https://github.com/vasturiano/force-graph) starfield of everything Claude Code and Codex have loaded: personal skills, plugin-provided skills, agents, slash commands, plugins themselves, and MCP tool servers. Each star's fill colour encodes its **type** (skill/agent/command/plugin/mcp-tool) and a thin outer ring encodes its **origin** (Claude Code vs. Codex) — the two are independent, both visible at a glance. Constellations cluster stars that share a category, overlapping keywords, or the same owning plugin.
+- **Filtering** — free-text search, checkboxes for source type and for origin (Claude Code / Codex), and a plugin dropdown grouped by origin.
+- **Task Recommender** — describe a task in plain language; a lightweight client-side shortlist step narrows the combined catalog (both tools) down to the most relevant ~25 candidates, then the [Groq API](https://console.groq.com) (`llama-3.1-8b-instant`, free tier) picks the single best match — Claude Code or Codex, whichever fits — and names which tool it came from in its reasoning. The matched node is highlighted and focused on the graph.
+- **Session Health** — a diagnostic snapshot of Claude Code's configured hooks, installed/enabled plugins, and known background-worker plugins (e.g. `claude-mem`) with their actual documented repair commands, plus a parallel Codex section (configured plugins, global MCP servers, config.toml sub-agents) — informational only, not a live process monitor. Codex has no hooks-file equivalent to Claude Code's `settings.json` hooks, so that specific sub-section stays Claude Code-only by design.
 
 ## Quick Start
 
@@ -23,7 +23,7 @@
    python rescan.py
    ```
 
-   This scans your local `~/.claude` directory and writes `data/skills-index.json` + `data/session-health.json`. These files are gitignored — everyone who runs Biblioteca generates their own from their own machine.
+   This scans your local `~/.claude` and `~/.codex` directories and writes `data/skills-index.json` + `data/session-health.json`. These files are gitignored — everyone who runs Biblioteca generates their own from their own machine. If only one of the two CLIs is installed, the other's entries are simply omitted (its directories don't exist, so its scan finds nothing).
 
 2. **Add a Groq API key (optional, only needed for the Task Recommender):**
 
@@ -55,17 +55,27 @@ Re-run `python rescan.py` any time you install/remove a plugin or skill, then re
 | Area | Choice |
 |---|---|
 | Recommendation engine | Groq API, free tier, `llama-3.1-8b-instant` |
-| Node graph rendering | vis-network, loaded via CDN |
+| Node graph rendering | force-graph (canvas), loaded via CDN |
 | Build approach | Single HTML/JS/CSS bundle, served with `python -m http.server` |
 | API key storage | Gitignored local config file (`config.local.js`), never hardcoded |
 | Skills/tools index | JSON file (`data/skills-index.json`), regenerated by `rescan.py` |
 
-`rescan.py` walks:
+`rescan.py` walks, for **Claude Code**:
 
 - `~/.claude/skills/*/SKILL.md` — personal skills
 - `~/.claude/plugins/installed_plugins.json` + each enabled plugin's `.claude-plugin/plugin.json` — installed plugins
 - `<plugin>/skills/*/SKILL.md`, `<plugin>/agents/*.md`, `<plugin>/commands/*.md` — everything each plugin ships
 - inline `mcpServers` in `plugin.json` and/or a sibling `.mcp.json` — MCP tool servers
+
+and for **Codex**, the same shapes wherever the two tools overlap:
+
+- `~/.codex/skills/**/SKILL.md` — personal skills (including the bundled `skills/.system/*` group)
+- `~/.codex/agents/*.md` — personal sub-agents, plus `~/.codex/config.toml` `[agents.*]` tables for config-only agents (e.g. `explorer`, `reviewer`) with no matching file
+- `~/.codex/prompts/*.md` — commands (Codex has no frontmatter here, so the description is mined from the first body paragraph instead)
+- `~/.codex/config.toml` `[plugins."<name>@<marketplace>"]` + `~/.codex/plugins/cache/<marketplace>/<name>/*/.codex-plugin/plugin.json` — installed plugins, with the same `skills/`, `agents/`, `commands/`, `.mcp.json` sub-layout as Claude Code plugins
+- `~/.codex/config.toml` `[mcp_servers.*]` — MCP servers not tied to any one plugin
+
+Every entry carries an `origin` field (`"claude-code"` or `"codex"`) alongside its `source` field (skill/agent/command/plugin/mcp-tool) — origin is which CLI surfaces it, source is what kind of thing it is. Codex entry ids are prefixed with `codex:` to stay unique from same-named Claude Code entries; Claude Code ids are unchanged for backwards compatibility with persisted recommendation tallies in `localStorage`.
 
 Each entry is categorized by a local keyword-substring heuristic (see `CATEGORY_TAXONOMY` in `rescan.py`) — no external classifier or network call is involved in indexing.
 
@@ -87,7 +97,7 @@ launch-biblioteca.bat   one-click Windows launcher
 
 ## Privacy note
 
-`data/skills-index.json` and `data/session-health.json` are generated locally and gitignored because they embed absolute file paths from your machine (including your OS username) and your installed plugin list. They are never committed — each clone regenerates its own via `rescan.py`.
+`data/skills-index.json` and `data/session-health.json` are generated locally and gitignored because they embed absolute file paths from your machine (including your OS username, from both `~/.claude` and `~/.codex`) and your installed plugin lists for both tools. They are never committed — each clone regenerates its own via `rescan.py`.
 
 ## License
 

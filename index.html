@@ -45,6 +45,10 @@
               <label><input type="checkbox" data-source="plugin" checked>PLUGIN</label>
               <label><input type="checkbox" data-source="mcp-tool" checked>MCP</label>
             </div>
+            <div id="origin-filter" role="group" aria-label="Filter by tool origin">
+              <label><input type="checkbox" data-origin="claude-code" checked>CLAUDE CODE</label>
+              <label><input type="checkbox" data-origin="codex" checked>CODEX</label>
+            </div>
           </div>
           <div id="graph-canvas"></div>
           <div id="graph-legend" aria-hidden="true">
@@ -53,6 +57,9 @@
             <span class="lg lg-command">CMD</span>
             <span class="lg lg-plugin">PLUGIN</span>
             <span class="lg lg-mcp">MCP</span>
+            <span class="lg-sep"></span>
+            <span class="lg lg-origin lg-origin-claude">CLAUDE CODE</span>
+            <span class="lg lg-origin lg-origin-codex">CODEX</span>
           </div>
           <div id="graph-empty" style="display:none">NO ENTRIES IN data/skills-index.json<br>RUN rescan.py TO GENERATE ONE</div>
         </div>

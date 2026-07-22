@@ -61,15 +61,15 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
   font:400 10px/1 'JetBrains Mono',monospace;letter-spacing:0.5px;padding:6px 9px
 }
 #filter-box::placeholder{color:var(--faint)}
-#source-filter{
+#source-filter,#origin-filter{
   display:flex;flex-wrap:wrap;gap:4px 8px;justify-content:flex-end;
   background:rgba(13,10,25,0.7);border:1px solid var(--bd);padding:5px 7px
 }
-#source-filter label{
+#source-filter label,#origin-filter label{
   display:flex;align-items:center;gap:3px;font:500 8.5px/1 'JetBrains Mono',monospace;
   letter-spacing:0.5px;color:var(--dim);cursor:pointer
 }
-#source-filter input[type=checkbox]{accent-color:var(--acc);width:11px;height:11px;cursor:pointer;margin:0}
+#source-filter input[type=checkbox],#origin-filter input[type=checkbox]{accent-color:var(--acc);width:11px;height:11px;cursor:pointer;margin:0}
 /* Deep-space backdrop — a dark, subtly-lit gradient the stars sit against.
    force-graph's own canvas is transparent so this shows through. */
 #graph-canvas{
@@ -94,6 +94,12 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 }
 .lg-skill{color:#8b7cf8}.lg-agent{color:#4BC9E2}.lg-command{color:#1D9E75}
 .lg-plugin{color:#E29A4B}.lg-mcp{color:#E24B9E}
+.lg-sep{width:1px;align-self:stretch;background:var(--bd2);margin:0 2px}
+/* Origin swatches render as a hollow ring (vs. the filled type dots above) so
+   the two legends read as two different visual dimensions of the same star. */
+.lg-origin::before{background:transparent;border:2px solid currentColor;box-shadow:none}
+.lg-origin-claude{color:#B7A9FF}
+.lg-origin-codex{color:#33E6B8}
 
 /* ── STAR TOOLTIP (force-graph .float-tooltip-kap host) ── */
 .float-tooltip-kap{
@@ -107,6 +113,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
   font:500 7.5px/1 'JetBrains Mono',monospace;letter-spacing:0.5px;color:var(--dim);
   background:rgba(139,124,248,0.1);border:1px solid var(--bd);padding:3px 5px
 }
+.st-tags .st-origin{background:transparent;border-color:currentColor}
 .st-desc{font:400 9.5px/1.5 'JetBrains Mono',monospace;color:var(--txt);letter-spacing:0.2px}
 .st-kw{margin-top:6px;font:400 8.5px/1.4 'JetBrains Mono',monospace;color:var(--faint);letter-spacing:0.3px}
 
@@ -136,15 +143,27 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
   font:400 10.5px/1.6 'JetBrains Mono',monospace;color:var(--dim)
 }
 #reasoning-box .r-name{color:var(--acc);font-weight:600;letter-spacing:1px;display:block;margin-bottom:4px}
+#reasoning-box .r-origin{
+  display:inline-block;margin-bottom:4px;margin-right:6px;padding:2px 6px;
+  font:600 8px/1.4 'JetBrains Mono',monospace;letter-spacing:1px;border:1px solid currentColor
+}
+#reasoning-box .r-origin-claude-code{color:#B7A9FF}
+#reasoning-box .r-origin-codex{color:#33E6B8}
 
 /* ── SESSION HEALTH ── */
 #health-panel{flex:1 1 auto;min-height:0}
 .health-section{margin-bottom:14px}
 .health-section:last-child{margin-bottom:0}
 .health-section-title{
+  display:flex;align-items:center;justify-content:space-between;
   font:600 8.5px/1 'JetBrains Mono',monospace;letter-spacing:2px;color:var(--faint);
   margin-bottom:7px;padding-bottom:5px;border-bottom:1px solid var(--bd)
 }
+.health-origin-tag{
+  font:600 7px/1 'JetBrains Mono',monospace;letter-spacing:1px;padding:2px 5px;
+  border:1px solid #B7A9FF;color:#B7A9FF
+}
+.health-origin-tag-codex{border-color:#33E6B8;color:#33E6B8}
 .health-row{display:flex;align-items:center;gap:8px;font:500 9.5px/1.5 'JetBrains Mono',monospace;letter-spacing:0.5px;margin-bottom:5px}
 .health-row .h-name{color:var(--txt);flex:1}
 .health-row .h-meta{color:var(--faint);font-size:8.5px}

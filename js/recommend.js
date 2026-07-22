@@ -55,11 +55,15 @@
       name: e.name,
       description: (e.description || '').slice(0, DESC_TRUNCATE),
       category: e.category,
+      origin: e.origin,
     }));
-    const system = 'You are a routing assistant for a local Claude Code skills/tools library called Biblioteca. ' +
-      'Given a task description and a shortlisted catalog of candidate skills/tools, pick the single best match. ' +
+    const system = 'You are a routing assistant for Biblioteca, a local unified skills/tools library covering ' +
+      'BOTH Claude Code and Codex. Given a task description and a shortlisted catalog of candidate skills/tools ' +
+      'drawn from both tools, pick the single best match regardless of which tool it comes from -- rank purely ' +
+      'on fit for the task. Each candidate has an "origin" field, either "claude-code" or "codex", naming which ' +
+      'CLI provides it. Explicitly name that origin in your reasoning (e.g. "This is a Codex skill that..."). ' +
       'Respond with ONLY a JSON object, no prose, no markdown fences, in this exact shape: ' +
-      '{"id": "<catalog id>", "reasoning": "<one or two sentence explanation>"}.';
+      '{"id": "<catalog id>", "reasoning": "<one or two sentence explanation that names the origin>"}.';
     const user = `Task: ${task}\n\nCatalog:\n${JSON.stringify(catalog)}`;
     return { system, user };
   }
@@ -149,7 +153,10 @@
 
       setStatus('Match found.', false);
       reasoningBox.style.display = 'block';
-      reasoningBox.innerHTML = `<span class="r-name">${escapeHtml(result.entry.name)}</span>${escapeHtml(result.reasoning || '')}`;
+      const originLabel = result.entry.origin === 'codex' ? 'CODEX' : 'CLAUDE CODE';
+      reasoningBox.innerHTML = `<span class="r-name">${escapeHtml(result.entry.name)}</span>` +
+        `<span class="r-origin r-origin-${result.entry.origin}">${originLabel}</span>` +
+        `${escapeHtml(result.reasoning || '')}`;
       if (window.BibliotecaGraph) window.BibliotecaGraph.highlightNode(result.entry.id);
     } catch (err) {
       setStatus(`Error: ${err.message}`, true);
